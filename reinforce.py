@@ -29,7 +29,7 @@ class PolicyNetwork(nn.Module):
 
         self.log_std_network = nn.Sequential(
             nn.Linear(hidden_dim, action_dim),
-            nn.Tanh()
+            nn.Sigmoid()
         )
 
 
@@ -60,7 +60,7 @@ class REINFORCE:
 
         mu, log_std = self.policy_network(state)
 
-        print(mu, log_std)
+        # print(mu, log_std)
 
         distribution = torch.distributions.Normal(mu + self.eps, log_std.exp() + self.eps)
         action = distribution.sample()
