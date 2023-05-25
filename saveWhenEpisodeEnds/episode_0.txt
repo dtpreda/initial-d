@@ -1,0 +1,1 @@
+{'rewards_over_episodes': [20.068600682593836], 'action_space': [(-1, 1, 0.2), (0, 1, 0.2), (1, 1, 0.2), (-1, 1, 0), (0, 1, 0), (1, 1, 0), (-1, 0, 0.2), (0, 0, 0.2), (1, 0, 0.2), (-1, 0, 0), (0, 0, 0), (1, 0, 0)], 'frame_stack_num': 3, 'memory_size': 5000, 'gamma': 0.95, 'epsilon': 0.995, 'epsilon_min': 0.1, 'epsilon_decay': 0.995, 'learning_rate': 0.002}

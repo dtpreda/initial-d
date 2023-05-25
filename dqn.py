@@ -52,8 +52,19 @@ class CarRacingAgent:
         self.target_model = self._build_model()
         self.update_target_model()
 
-    def build_memory(self):
-        return deque(maxlen=self.memory_size)
+    def get_params(self):
+        return {
+            "action_space": self.action_space,
+            "frame_stack_num": self.frame_stack_num,
+            "memory_size": self.memory_size,
+            "gamma": self.gamma,
+            "epsilon": self.epsilon,
+            "epsilon_min": self.epsilon_min,
+            "epsilon_decay": self.epsilon_decay,
+            "learning_rate": self.learning_rate,
+        }
+    def build_memory(self, memory_size=5000):
+        return deque(maxlen=memory_size)
 
     def _build_model(self):
         model = Sequential()
@@ -76,7 +87,7 @@ class CarRacingAgent:
     def act(self, state):
         if np.random.rand() <= self.epsilon:
             return random.choice(self.action_space)
-        act_values = self.model.predict(state)
+        act_values = self.model.predict(state, verbose=0)
         return self.action_space[np.argmax(act_values[0])]
 
     def replay(self, batch_size):
