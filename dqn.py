@@ -2,7 +2,7 @@ import random
 import numpy as np
 from collections import deque
 from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, ReLU, BatchNormalization
 from tensorflow.keras.optimizers import Adam
 
 # ACTION SPACE
@@ -25,12 +25,37 @@ normal_space = [
         (-1, 0,   0), (0, 0,   0), (1, 0,   0)
     ]
 
+forward_action_space = [
+    (0.0, 1.0, 0.0),
+    (1.0, 1.0, 0.0), (-1.0, 1.0, 0.0),
+    (0.0, 0.5, 0.0),
+    (1.0, 0.5, 0.0), (-1.0, 0.5, 0.0),
+    (0.0, 1.0, 0.5),
+    (1.0, 1.0, 0.5), (-1.0, 1.0, 0.5),
+    (0.0, 1.0, 0.2),
+    (1.0, 1.0, 0.2), (-1.0, 1.0, 0.2),
+    (0.0, 1.0, 0.8),
+    (1.0, 1.0, 0.8), (-1.0, 1.0, 0.8),
+
+    (0.5, 1.0, 0.0), (-0.5, 1.0, 0.0),
+    (0.5, 0.5, 0.0), (-0.5, 0.5, 0.0),
+    (0.5, 1.0, 0.5), (-0.5, 1.0, 0.5),
+    (0.5, 1.0, 0.2), (-0.5, 1.0, 0.2),
+    (0.5, 1.0, 0.8), (-0.5, 1.0, 0.8),
+    
+    (0.25, 1.0, 0.0), (-0.25, 1.0, 0.0),
+    (0.25, 0.5, 0.0), (-0.25, 0.5, 0.0),
+    (0.25, 1.0, 0.5), (-0.25, 1.0, 0.5),
+    (0.25, 1.0, 0.2), (-0.25, 1.0, 0.2),
+    (0.25, 1.0, 0.8), (-0.25, 1.0, 0.8),
+    ]
+
 # other action spaces can be defined here to emulate different driving styles
 
 class CarRacingAgent:
     def __init__(
             self,
-            action_space=normal_space,
+            action_space=forward_action_space,
             frame_stack_num=3,
             memory_size=5000,
             gamma=0.95,
@@ -66,12 +91,20 @@ class CarRacingAgent:
     def build_memory(self, memory_size=5000):
         return deque(maxlen=memory_size)
 
-    def _build_model(self):
+    def _build_model(self, improved=False):
         model = Sequential()
         model.add(Conv2D(filters=6, kernel_size=(4, 4), strides=(2,2), activation='relu', input_shape=(96, 96, self.frame_stack_num)))
         model.add(MaxPooling2D(pool_size=(2, 2)))
+        if improved:
+            print("Hello darkness my old friend")
+            model.add(ReLU())
+            model.add(BatchNormalization())
         model.add(Conv2D(filters=12, kernel_size=(4, 4), strides=(2,2), activation='relu'))
         model.add(MaxPooling2D(pool_size=(2, 2)))
+        if improved:
+            print("Hello darkness my old friend")
+            model.add(ReLU())
+            model.add(BatchNormalization())
         model.add(Flatten())
         model.add(Dense(300, activation='relu'))
         model.add(Dense(len(self.action_space), activation=None))
@@ -84,8 +117,8 @@ class CarRacingAgent:
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, self.action_space.index(action), reward, next_state, done))
     
-    def act(self, state):
-        if np.random.rand() <= self.epsilon:
+    def act(self, state, explore=True):
+        if explore and np.random.rand() <= self.epsilon:
             return random.choice(self.action_space)
         act_values = self.model.predict(state, verbose=0)
         return self.action_space[np.argmax(act_values[0])]
