@@ -18,12 +18,19 @@ default_action_space = [
     (-0.5, 0.5, 0.5), (0.5, 0.5, 0.5), # half gas, left, right and brake
     ]
 
+normal_space = [
+        (-1, 1, 0.2), (0, 1, 0.2), (1, 1, 0.2), #           Action Space Structure
+        (-1, 1,   0), (0, 1,   0), (1, 1,   0), #        (Steering Wheel, Gas, Break)
+        (-1, 0, 0.2), (0, 0, 0.2), (1, 0, 0.2), # Range        -1~1       0~1   0~1
+        (-1, 0,   0), (0, 0,   0), (1, 0,   0)
+    ]
+
 # other action spaces can be defined here to emulate different driving styles
 
 class CarRacingAgent:
     def __init__(
             self,
-            action_space=default_action_space,
+            action_space=normal_space,
             frame_stack_num=3,
             memory_size=5000,
             gamma=0.95,
@@ -45,8 +52,19 @@ class CarRacingAgent:
         self.target_model = self._build_model()
         self.update_target_model()
 
-    def build_memory(self):
-        return deque(maxlen=self.memory_size)
+    def get_params(self):
+        return {
+            "action_space": self.action_space,
+            "frame_stack_num": self.frame_stack_num,
+            "memory_size": self.memory_size,
+            "gamma": self.gamma,
+            "epsilon": self.epsilon,
+            "epsilon_min": self.epsilon_min,
+            "epsilon_decay": self.epsilon_decay,
+            "learning_rate": self.learning_rate,
+        }
+    def build_memory(self, memory_size=5000):
+        return deque(maxlen=memory_size)
 
     def _build_model(self):
         model = Sequential()
@@ -69,19 +87,36 @@ class CarRacingAgent:
     def act(self, state):
         if np.random.rand() <= self.epsilon:
             return random.choice(self.action_space)
-        
-        act_values = self.model.predict(state)
+        act_values = self.model.predict(state, verbose=0)
         return self.action_space[np.argmax(act_values[0])]
 
     def replay(self, batch_size):
         rng = np.random.default_rng()
+        
+        """
+        minibatch = random.sample(self.memory, batch_size)
+        train_state = []
+        train_target = []
+        for state, action_index, reward, next_state, done in minibatch:
+            target = self.model.predict(np.expand_dims(state, axis=0))[0]
+            if done:
+                target[action_index] = reward
+            else:
+                t = self.target_model.predict(np.expand_dims(next_state, axis=0))[0]
+                target[action_index] = reward + self.gamma * np.amax(t)
+            train_state.append(state)
+            train_target.append(target)
+        self.model.fit(np.array(train_state), np.array(train_target), epochs=1, verbose=0)
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
+        """
         minibatch = rng.choice(np.array(self.memory), batch_size, replace=False)
         states, actions, rewards, next_states, dones = zip(*minibatch)
 
-        train_states = np.array([np.transpose(state[0], (1, 2, 0)) for state in states])
+        train_states = np.array([state for state in states])
         train_targets = self.model.predict(train_states, verbose=0)
 
-        next_states = np.array([np.transpose(state[0], (1, 2, 0)) for state in next_states])
+        next_states = np.array([state for state in next_states])
         next_state_values = np.amax(self.target_model.predict(next_states, verbose=0), axis=1)
 
         dones = np.array(dones)  # Convert dones to NumPy array
@@ -93,6 +128,7 @@ class CarRacingAgent:
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+        
 
 
     
