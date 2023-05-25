@@ -63,6 +63,7 @@ class CarRacingAgent:
             epsilon_min=0.1,
             epsilon_decay=0.9999,
             learning_rate=0.001,
+            improved=False,
     ):
         self.action_space = action_space
         self.frame_stack_num = frame_stack_num
@@ -73,8 +74,8 @@ class CarRacingAgent:
         self.epsilon_min = epsilon_min
         self.epsilon_decay = epsilon_decay
         self.learning_rate = learning_rate
-        self.model = self._build_model()
-        self.target_model = self._build_model()
+        self.model = self._build_model(improved=improved)
+        self.target_model = self._build_model(improved=improved)
         self.update_target_model()
 
     def get_params(self):
@@ -96,13 +97,11 @@ class CarRacingAgent:
         model.add(Conv2D(filters=6, kernel_size=(4, 4), strides=(2,2), activation='relu', input_shape=(96, 96, self.frame_stack_num)))
         model.add(MaxPooling2D(pool_size=(2, 2)))
         if improved:
-            print("Hello darkness my old friend")
             model.add(ReLU())
             model.add(BatchNormalization())
         model.add(Conv2D(filters=12, kernel_size=(4, 4), strides=(2,2), activation='relu'))
         model.add(MaxPooling2D(pool_size=(2, 2)))
         if improved:
-            print("Hello darkness my old friend")
             model.add(ReLU())
             model.add(BatchNormalization())
         model.add(Flatten())
